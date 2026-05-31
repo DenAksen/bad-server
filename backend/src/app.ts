@@ -68,7 +68,7 @@ const {
     generateCsrfToken,
 } = doubleCsrf({
     getSecret: () => csrfSecret,
-    cookieName: 'csrf-token',
+    cookieName: '_csrf',
     cookieOptions: {
         httpOnly: true,
         sameSite: 'lax',
