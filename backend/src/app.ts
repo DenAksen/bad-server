@@ -89,9 +89,17 @@ app.get('/csrf-token', (req, res) => {
     res.json({ csrfToken: token });
 });
 
+const csrfExcludedPaths = [
+    '/api/auth/login',
+    '/api/auth/register'
+]
+
 app.use((req, res, next) => {
     // Пропускаем загрузку файлов без CSRF
     if (req.method === 'POST' && req.path === '/upload') {
+        return next()
+    }
+    if (csrfExcludedPaths.includes(req.path)) {
         return next()
     }
     // Для всех остальных запросов применяем CSRF защиту
