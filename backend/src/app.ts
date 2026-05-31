@@ -24,6 +24,13 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 
+
+app.use((_req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', ORIGIN_ALLOW?.split(',') || ['http://localhost:5173'])
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    next()
+})
+
 app.use(cookieParser())
 
 app.use(helmet({

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { constants } from 'http2'
-import crypto from 'crypto'
 import path from 'path'
+import crypto from 'crypto'
 import BadRequestError from '../errors/bad-request-error'
 
 export const uploadFile = async (
@@ -31,12 +31,12 @@ export const uploadFile = async (
     }
     
     try {
+        // Защита от path traversal
         const ext = path.extname(req.file.originalname)
-        const generatedName = crypto.randomBytes(16).toString('hex') + ext
-        
+        const safeName = crypto.randomBytes(16).toString('hex') + ext
         const fileName = process.env.UPLOAD_PATH
-            ? `/${process.env.UPLOAD_PATH}/${generatedName}`
-            : `/${generatedName}`
+            ? `/${process.env.UPLOAD_PATH}/${safeName}`
+            : `/${safeName}`
             
         return res.status(constants.HTTP_STATUS_CREATED).send({
             fileName,
