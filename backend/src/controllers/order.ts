@@ -5,6 +5,7 @@ import NotFoundError from '../errors/not-found-error'
 import Order, { IOrder } from '../models/order'
 import Product, { IProduct } from '../models/product'
 import User from '../models/user'
+import escapeRegExp from '../utils/escapeRegExp'
 
 // eslint-disable-next-line max-len
 // GET /orders?page=2&limit=5&sort=totalAmount&order=desc&orderDateFrom=2024-07-01&orderDateTo=2024-08-01&status=delivering&totalAmountFrom=100&totalAmountTo=1000&search=%2B1
@@ -28,96 +29,62 @@ export const getOrders = async (
             search,
         } = req.query
 
+        const safePage = Math.max(1, Number(page))
+        const safeLimit = Math.min(100, Math.max(1, Number(limit)))
+
         const filters: FilterQuery<Partial<IOrder>> = {}
 
-        if (status) {
-            if (typeof status === 'object') {
-                Object.assign(filters, status)
-            }
-            if (typeof status === 'string') {
-                filters.status = status
-            }
+        if (status && typeof status === 'string') {
+            filters.status = status
         }
 
-        if (totalAmountFrom) {
-            filters.totalAmount = {
-                ...filters.totalAmount,
-                $gte: Number(totalAmountFrom),
-            }
+        if (totalAmountFrom && !Number.isNaN(Number(totalAmountFrom))) {
+            filters.totalAmount = { $gte: Number(totalAmountFrom) }
         }
 
-        if (totalAmountTo) {
-            filters.totalAmount = {
-                ...filters.totalAmount,
-                $lte: Number(totalAmountTo),
-            }
+        if (totalAmountTo && !Number.isNaN(Number(totalAmountTo))) {
+            filters.totalAmount = { ...filters.totalAmount, $lte: Number(totalAmountTo) }
         }
 
         if (orderDateFrom) {
-            filters.createdAt = {
-                ...filters.createdAt,
-                $gte: new Date(orderDateFrom as string),
-            }
+            filters.createdAt = { $gte: new Date(orderDateFrom as string) }
         }
 
         if (orderDateTo) {
-            filters.createdAt = {
-                ...filters.createdAt,
-                $lte: new Date(orderDateTo as string),
-            }
+            filters.createdAt = { ...filters.createdAt, $lte: new Date(orderDateTo as string) }
         }
 
         const aggregatePipeline: any[] = [
             { $match: filters },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'products',
-                    foreignField: '_id',
-                    as: 'products',
-                },
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'customer',
-                    foreignField: '_id',
-                    as: 'customer',
-                },
-            },
+            { $lookup: { from: 'products', localField: 'products', foreignField: '_id', as: 'products' } },
+            { $lookup: { from: 'users', localField: 'customer', foreignField: '_id', as: 'customer' } },
             { $unwind: '$customer' },
             { $unwind: '$products' },
         ]
 
-        if (search) {
-            const searchRegex = new RegExp(search as string, 'i')
-            const searchNumber = Number(search)
-
-            const searchConditions: any[] = [{ 'products.title': searchRegex }]
-
-            if (!Number.isNaN(searchNumber)) {
-                searchConditions.push({ orderNumber: searchNumber })
-            }
-
+        if (search && typeof search === 'string') {
+            const safeSearch = escapeRegExp(search.slice(0, 100))
+            const searchRegex = new RegExp(safeSearch, 'i')
+            
             aggregatePipeline.push({
                 $match: {
-                    $or: searchConditions,
-                },
+                    $or: [
+                        { 'products.title': searchRegex },
+                        { orderNumber: !Number.isNaN(Number(search)) ? Number(search) : null }
+                    ]
+                }
             })
-
-            filters.$or = searchConditions
         }
 
-        const sort: { [key: string]: any } = {}
-
+        const sort: { [key: string]: number } = {}
         if (sortField && sortOrder) {
             sort[sortField as string] = sortOrder === 'desc' ? -1 : 1
         }
 
         aggregatePipeline.push(
             { $sort: sort },
-            { $skip: (Number(page) - 1) * Number(limit) },
-            { $limit: Number(limit) },
+            { $skip: (safePage - 1) * safeLimit },
+            { $limit: safeLimit },
             {
                 $group: {
                     _id: '$_id',
@@ -133,15 +100,15 @@ export const getOrders = async (
 
         const orders = await Order.aggregate(aggregatePipeline)
         const totalOrders = await Order.countDocuments(filters)
-        const totalPages = Math.ceil(totalOrders / Number(limit))
+        const totalPages = Math.ceil(totalOrders / safeLimit)
 
         res.status(200).json({
             orders,
             pagination: {
                 totalOrders,
                 totalPages,
-                currentPage: Number(page),
-                pageSize: Number(limit),
+                currentPage: safePage,
+                pageSize: safeLimit,
             },
         })
     } catch (error) {

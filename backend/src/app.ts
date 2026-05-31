@@ -32,7 +32,7 @@ app.use(helmet({
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 49,
     message: 'Слишком много запросов, попробуйте позже'
 })
 app.use(limiter)
@@ -43,6 +43,7 @@ const corsOptions = {
     optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
 
 app.use(express.static(path.join(__dirname, 'public'), {
     dotfiles: 'deny',

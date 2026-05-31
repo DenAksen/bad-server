@@ -30,6 +30,9 @@ export const getCustomers = async (
             search,
         } = req.query
 
+        const safePage = Math.max(1, Number(page))
+        const safeLimit = Math.min(10, Math.max(1, Number(limit)))
+
         const filters: FilterQuery<Partial<IUser>> = {}
 
         if (registrationDateFrom) {
@@ -117,8 +120,8 @@ export const getCustomers = async (
 
         const options = {
             sort,
-            skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            skip: (safePage - 1) * safeLimit,
+            limit: safeLimit,
         }
 
         const users = await User.find(filters, null, options).populate([
@@ -188,7 +191,7 @@ export const updateCustomer = async (
                 updates[key] = req.body[key]
             }
         })
-        
+
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
             req.body,
