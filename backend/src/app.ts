@@ -89,6 +89,11 @@ app.get('/csrf-token', (req, res) => {
     res.json({ csrfToken: token });
 });
 
+app.get('/auth/csrf-token', (req, res) => {
+    const token = generateCsrfToken(req, res);
+    res.json({ csrfToken: token });
+});
+
 const csrfExcludedPaths = [
     '/api/auth/login',
     '/api/auth/register'
