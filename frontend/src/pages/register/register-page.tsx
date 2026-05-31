@@ -20,7 +20,15 @@ export default function RegisterPage() {
 
     const handleFormSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
-        registerUser(values)
+        
+        const csrfInput = formRef.current?.querySelector('input[name="csrfToken"]') as HTMLInputElement
+        const csrfToken = csrfInput?.value || ''
+
+        const dataWithToken = {
+        ...values,
+        csrfToken,
+        }
+        registerUser(dataWithToken)
             .unwrap()
             .catch((err) => {
                 toast.error(err.message)

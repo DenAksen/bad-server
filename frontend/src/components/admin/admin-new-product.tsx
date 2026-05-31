@@ -52,6 +52,8 @@ export default function AdminNewProduct() {
     }
 
     const handleCreateProduct = async () => {
+        const csrfInput = formRef.current?.querySelector('input[name="csrfToken"]') as HTMLInputElement
+        const csrfToken = csrfInput?.value || ''
         if (!selectedFile || !selectedCategory) {
             console.log('Не выбран файл или категория')
             return
@@ -61,6 +63,7 @@ export default function AdminNewProduct() {
             category: selectedCategory?.title as keyof typeof CATEGORY_CLASSES,
             image: selectedFile,
             price: values.price ? values.price : null,
+            csrfToken: csrfToken,
         }
         await createProduct(dataProduct)
             .unwrap()

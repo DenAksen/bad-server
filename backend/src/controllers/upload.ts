@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { constants } from 'http2'
+import path from 'path'
 import BadRequestError from '../errors/bad-request-error'
 
 export const uploadFile = async (
@@ -10,13 +11,21 @@ export const uploadFile = async (
     if (!req.file) {
         return next(new BadRequestError('Файл не загружен'))
     }
+    
+    if (!req.file.filename) {
+        return next(new BadRequestError('Ошибка сохранения файла'))
+    }
+    
     try {
+        // Защита от path traversal
+        const safeFileName = path.basename(req.file.filename)
         const fileName = process.env.UPLOAD_PATH
-            ? `/${process.env.UPLOAD_PATH}/${req.file.filename}`
-            : `/${req.file?.filename}`
+            ? `/${process.env.UPLOAD_PATH}/${safeFileName}`
+            : `/${safeFileName}`
+            
         return res.status(constants.HTTP_STATUS_CREATED).send({
             fileName,
-            originalName: req.file?.originalname,
+            originalName: req.file.originalname,
         })
     } catch (error) {
         return next(error)

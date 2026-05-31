@@ -163,7 +163,11 @@ userSchema.methods.generateRefreshToken =
             .createHmac('sha256', REFRESH_TOKEN.secret)
             .update(refreshToken)
             .digest('hex')
-
+        
+        const MAX_TOKENS = 10
+            if (user.tokens.length >= MAX_TOKENS) {
+                user.tokens = user.tokens.slice(-MAX_TOKENS + 1)
+            }
         // Сохраняем refresh токена в базу данных, можно делать в контроллере авторизации/регистрации
         user.tokens.push({ token: rTknHash })
         await user.save()

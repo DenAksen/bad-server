@@ -192,6 +192,15 @@ const updateCurrentUser = async (
 ) => {
     const userId = res.locals.user._id
     try {
+        const allowedUpdates = ['name', 'email']
+        const updates: Record<string, any> = {}
+        
+        Object.keys(req.body).forEach(key => {
+            if (allowedUpdates.includes(key)) {
+                updates[key] = req.body[key]
+            }
+        })
+
         const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
             new: true,
         }).orFail(

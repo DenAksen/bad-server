@@ -2,12 +2,15 @@ import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
 // eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/
+export const phoneRegExp = /^[\+\d\s\-\(\)]{10,25}$/
 
 export enum PaymentType {
     Card = 'card',
     Online = 'online',
 }
+
+// Запрещённые для XSS символы
+const noHtmlPattern = /^[^<>{}[\]/\\]*$/
 
 // валидация id
 export const validateOrderBody = celebrate({
@@ -32,19 +35,20 @@ export const validateOrderBody = celebrate({
                     'Указано не валидное значение для способа оплаты, возможные значения - "card", "online"',
                 'string.empty': 'Не указан способ оплаты',
             }),
-        email: Joi.string().email().required().messages({
+        email: Joi.string().email().required().max(255).messages({
             'string.empty': 'Не указан email',
         }),
-        phone: Joi.string().required().pattern(phoneRegExp).messages({
+        phone: Joi.string().required().pattern(phoneRegExp).max(25).messages({
             'string.empty': 'Не указан телефон',
         }),
-        address: Joi.string().required().messages({
+        address: Joi.string().required().max(500).pattern(noHtmlPattern).messages({
             'string.empty': 'Не указан адрес',
         }),
-        total: Joi.number().required().messages({
+        total: Joi.number().positive().required().messages({
             'string.empty': 'Не указана сумма заказа',
         }),
-        comment: Joi.string().optional().allow(''),
+        comment: Joi.string().optional().allow('').max(1000).pattern(noHtmlPattern),
+        csrfToken: Joi.string().optional(),
     }),
 })
 
@@ -52,7 +56,7 @@ export const validateOrderBody = celebrate({
 // name и link - обязательные поля, name - от 2 до 30 символов, link - валидный url
 export const validateProductBody = celebrate({
     body: Joi.object().keys({
-        title: Joi.string().required().min(2).max(30).messages({
+        title: Joi.string().required().min(2).max(30).pattern(noHtmlPattern).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
             'string.empty': 'Поле "title" должно быть заполнено',
@@ -68,12 +72,13 @@ export const validateProductBody = celebrate({
             'string.empty': 'Поле "description" должно быть заполнено',
         }),
         price: Joi.number().allow(null),
+        csrfToken: Joi.string().optional(),
     }),
 })
 
 export const validateProductUpdateBody = celebrate({
     body: Joi.object().keys({
-        title: Joi.string().min(2).max(30).messages({
+        title: Joi.string().min(2).max(30).pattern(noHtmlPattern).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
         }),
@@ -84,6 +89,7 @@ export const validateProductUpdateBody = celebrate({
         category: Joi.string(),
         description: Joi.string(),
         price: Joi.number().allow(null),
+        csrfToken: Joi.string().optional(),
     }),
 })
 
@@ -102,7 +108,7 @@ export const validateObjId = celebrate({
 
 export const validateUserBody = celebrate({
     body: Joi.object().keys({
-        name: Joi.string().min(2).max(30).messages({
+        name: Joi.string().min(2).max(30).pattern(noHtmlPattern).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
         }),
