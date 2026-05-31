@@ -16,6 +16,14 @@ import routes from './routes'
 const { PORT = 3000 } = process.env
 const app = express()
 
+const corsOptions = {
+    origin: ORIGIN_ALLOW?.split(',') || ['http://localhost:5173'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
+
 app.use(cookieParser())
 
 app.use(helmet({
@@ -37,14 +45,6 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
-const corsOptions = {
-    origin: ORIGIN_ALLOW?.split(',') || ['http://localhost:5173'],
-    credentials: true,
-    optionsSuccessStatus: 200
-}
-app.use(cors(corsOptions))
-app.options('*', cors(corsOptions))
-
 app.use(express.static(path.join(__dirname, 'public'), {
     dotfiles: 'deny',
     index: false,
@@ -59,12 +59,24 @@ app.use(express.static(path.join(__dirname, 'public'), {
 app.use(urlencoded({ extended: true, limit: '1mb' }))
 app.use(json({ limit: '1mb' }))
 
-// ЗАЩИТА ОТ NoSQL ИНЪЕКЦИЙ
-app.use(mongoSanitize())
+app.use(mongoSanitize({
+    replaceWith: '_',
+    allowDots: true,
+}))
 
 app.use((req, _res, next) => {
     if (req.query) {
-        req.query = mongoSanitize.sanitize(req.query)
+        req.query = JSON.parse(
+            JSON.stringify(req.query, (_key, value) => {
+                if (value && typeof value === 'object') {
+                    return value
+                }
+                if (typeof value === 'string' && value.includes('$')) {
+                    return '_sanitized_'
+                }
+                return value
+            })
+        )
     }
     next()
 })

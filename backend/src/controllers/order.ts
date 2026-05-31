@@ -34,6 +34,10 @@ export const getOrders = async (
 
         const filters: FilterQuery<Partial<IOrder>> = {}
 
+        if (status && typeof status === 'object') {
+            throw new BadRequestError('Invalid status parameter')
+        }
+
         if (status && typeof status === 'string') {
             filters.status = status
         }
