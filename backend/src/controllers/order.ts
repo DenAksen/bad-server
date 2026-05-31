@@ -30,7 +30,7 @@ export const getOrders = async (
         } = req.query
 
         const safePage = Math.max(1, Number(page))
-        const safeLimit = Math.min(100, Math.max(1, Number(limit)))
+        const safeLimit = Math.min(10, Math.max(1, Number(limit)))
 
         const filters: FilterQuery<Partial<IOrder>> = {}
 

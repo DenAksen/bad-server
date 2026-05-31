@@ -62,6 +62,13 @@ app.use(json({ limit: '1mb' }))
 // ЗАЩИТА ОТ NoSQL ИНЪЕКЦИЙ
 app.use(mongoSanitize())
 
+app.use((req, _res, next) => {
+    if (req.query) {
+        req.query = mongoSanitize.sanitize(req.query)
+    }
+    next()
+})
+
 const csrfSecret = process.env.CSRF_SECRET || 'csrf-dev'
 
 const {
