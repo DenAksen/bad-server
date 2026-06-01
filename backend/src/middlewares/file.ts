@@ -1,8 +1,9 @@
-import { Request, Express } from 'express'
-import multer, { FileFilterCallback } from 'multer'
-import { mkdirSync } from 'fs'
-import path, { join } from 'path'
-import crypto from 'crypto'
+import { Request, Express, NextFunction, Response } from 'express';
+import multer, { FileFilterCallback } from 'multer';
+import { mkdirSync, promises as fs } from 'fs';
+import sharp from 'sharp';
+import path, { join } from 'path';
+import crypto from 'crypto';
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
@@ -53,6 +54,26 @@ const fileFilter = (
     }
     return cb(null, true)
 }
+
+export const validateImageFile = async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.file) return next();
+    
+    const filePath = path.join(req.file.destination, req.file.filename);
+    
+    try {
+        const metadata = await sharp(filePath).metadata();
+        
+        if (!metadata.width || !metadata.height) {
+            await fs.unlink(filePath);
+            return res.status(400).json({ error: 'Invalid image file' });
+        }
+        
+        next();
+    } catch (error) {
+        await fs.unlink(filePath);
+        return res.status(400).json({ error: 'Invalid image file' });
+    }
+};
 
 export default multer({ 
     storage, 

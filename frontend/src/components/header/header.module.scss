@@ -1,3 +1,5 @@
+@use '../../scss/mixins/index' as mixins;
+
 .header {
     height: $headerHeight;
     background-color: $primary;
