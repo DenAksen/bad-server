@@ -1,3 +1,5 @@
+@use '../../scss/mixins/index' as mixins;
+
 .form {
     &__field {
         @include mixins.flex(column);

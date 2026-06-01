@@ -4,6 +4,8 @@ import {
     FormHTMLAttributes,
     ReactNode,
     SyntheticEvent,
+    useEffect,
+    useState,
 } from 'react'
 import styles from './form.module.scss'
 
@@ -25,6 +27,15 @@ export default function Form({
     formRef,
     ...props
 }: FormProps) {
+    const [csrfToken, setCsrfToken] = useState('');
+
+    useEffect(() => {
+        fetch('/api/csrf-token', { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => setCsrfToken(data.csrfToken))
+            .catch(err => console.error('CSRF error:', err));
+            console.log(csrfToken)
+    }, []);
     return (
         <form
             ref={formRef}
@@ -34,6 +45,7 @@ export default function Form({
             onSubmit={handleFormSubmit}
             {...props}
         >
+            <input type="hidden" name="csrfToken" value={csrfToken} />
             {children}
         </form>
     )

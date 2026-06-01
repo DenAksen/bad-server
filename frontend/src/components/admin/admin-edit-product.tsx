@@ -74,6 +74,8 @@ export default function AdminEditProduct() {
     }, [currentProduct])
 
     const handleUpdateProduct = async () => {
+        const csrfInput = formRef.current?.querySelector('input[name="csrfToken"]') as HTMLInputElement
+        const csrfToken = csrfInput?.value || ''
         if (!selectedCategory) {
             return
         }
@@ -82,6 +84,7 @@ export default function AdminEditProduct() {
             category: selectedCategory?.title as keyof typeof CATEGORY_CLASSES,
             image: selectedFile ? selectedFile : undefined,
             price: values.price ? values.price : null,
+            csrfToken: csrfToken,
         }
 
         editId &&
@@ -96,8 +99,10 @@ export default function AdminEditProduct() {
     }
 
     const handleDeleteProduct = () => {
+        const csrfInput = formRef.current?.querySelector('input[name="csrfToken"]') as HTMLInputElement
+        const csrfToken = csrfInput?.value || ''
         editId &&
-            deleteProduct(editId)
+            deleteProduct({ id: editId, csrfToken })
                 .unwrap()
                 .then(() => navigateAdminList())
                 .catch((error) => toast.error(error.message))

@@ -46,9 +46,12 @@ export const updateProduct = createAsyncThunk<
     return updateProduct(data, id)
 })
 
-export const deleteProduct = createAsyncThunk<IProduct, string>(
+export const deleteProduct = createAsyncThunk<
+    IProduct, 
+    { id: string; csrfToken: string }
+>(
     'products/deleteProduct',
-    (id, { extra: { deleteProduct } }) => {
-        return deleteProduct(id)
+    ({ id, csrfToken }, { extra: { deleteProduct } }) => {
+        return deleteProduct(id, csrfToken)
     }
 )

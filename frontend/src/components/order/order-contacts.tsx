@@ -46,9 +46,11 @@ export function OrderContacts() {
 
     const handleFormSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
+        const csrfInput = formRef.current?.querySelector('input[name="csrfToken"]') as HTMLInputElement
+        const csrfToken = csrfInput?.value || ''
         setInfo(values)
         // т.к. на момент отправки запроса данные введенные в поля еще не записаны в store, добавляем в запрос их вручную
-        createOrder({ ...orderPersistData, ...values })
+        createOrder({ ...orderPersistData, ...values, csrfToken})
             .unwrap()
             .then((dataResponse) => {
                 resetBasket()

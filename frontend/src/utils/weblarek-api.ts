@@ -25,10 +25,7 @@ export const enum RequestStatus {
     Failed = 'failed',
 }
 
-export type ApiListResponse<Type> = {
-    total: number
-    items: Type[]
-}
+export type ApiListResponse<Type> = { total: number; items: Type[] }
 
 class Api {
     private readonly baseUrl: string
@@ -36,11 +33,7 @@ class Api {
 
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
-        this.options = {
-            headers: {
-                ...((options.headers as object) ?? {}),
-            },
-        }
+        this.options = { headers: { ...((options.headers as object) ?? {}) } }
     }
 
     protected handleResponse<T>(response: Response): Promise<T> {
@@ -131,9 +124,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         ).toString()
         return this.request<IProductPaginationResult>(
             `/product?${queryParams}`,
-            {
-                method: 'GET',
-            }
+            { method: 'GET' }
         ).then((data) => ({
             ...data,
             items: data.items.map((item) => ({
@@ -230,9 +221,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         return this.request<UserResponseToken>('/auth/login', {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
         })
     }
@@ -241,9 +230,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         return this.request<UserResponseToken>('/auth/register', {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
         })
     }
@@ -309,10 +296,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             },
         }).then((data: IProduct) => ({
             ...data,
-            image: {
-                ...data.image,
-                fileName: this.cdn + data.image.fileName,
-            },
+            image: { ...data.image, fileName: this.cdn + data.image.fileName },
         }))
     }
 
@@ -320,13 +304,8 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         return this.requestWithRefresh<IFile>('/upload', {
             method: 'POST',
             body: data,
-            headers: {
-                Authorization: `Bearer ${getCookie('accessToken')}`,
-            },
-        }).then((data) => ({
-            ...data,
-            fileName: data.fileName,
-        }))
+            headers: { Authorization: `Bearer ${getCookie('accessToken')}` },
+        }).then((data) => ({ ...data, fileName: data.fileName }))
     }
 
     updateProduct = (data: Partial<Omit<IProduct, '_id'>>, id: string) => {
@@ -339,19 +318,22 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             },
         }).then((data: IProduct) => ({
             ...data,
-            image: {
-                ...data.image,
-                fileName: this.cdn + data.image.fileName,
-            },
+            image: { ...data.image, fileName: this.cdn + data.image.fileName },
         }))
     }
 
-    deleteProduct = (id: string) => {
+    deleteProduct = (id: string, csrfToken?: string) => {
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${getCookie('accessToken')}`,
+        }
+
+        if (csrfToken) {
+            headers['x-csrf-token'] = csrfToken
+        }
+
         return this.requestWithRefresh<IProduct>(`/product/${id}`, {
             method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${getCookie('accessToken')}`,
-            },
+            headers,
         })
     }
 }

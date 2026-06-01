@@ -20,7 +20,16 @@ export default function LoginPage() {
 
     const handleFormSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
-        loginUser(values)
+
+        const csrfInput = formRef.current?.querySelector('input[name="csrfToken"]') as HTMLInputElement
+        const csrfToken = csrfInput?.value || ''
+
+        const dataWithToken = {
+        ...values,
+        csrfToken,
+        }
+
+        loginUser(dataWithToken)
             .unwrap()
             .catch((err) => {
                 toast.error(err.message)

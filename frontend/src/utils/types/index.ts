@@ -44,6 +44,7 @@ export interface IOrder {
     address: string
     total: number
     items: string[]
+    csrfToken?: string
 }
 
 export interface IUser {

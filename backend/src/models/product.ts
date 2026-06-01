@@ -1,6 +1,6 @@
-import { unlink } from 'fs'
+import fs from 'fs'
 import mongoose, { Document } from 'mongoose'
-import { join } from 'path'
+import path from 'path'
 
 export interface IFile {
     fileName: string
@@ -48,24 +48,40 @@ const cardsSchema = new mongoose.Schema<IProduct>(
 
 cardsSchema.index({ title: 'text' })
 
-// Можно лучше: удалять старое изображением перед обновлением сущности
 cardsSchema.pre('findOneAndUpdate', async function deleteOldImage() {
-    // @ts-ignore
-    const updateImage = this.getUpdate().$set?.image
+    const update = this.getUpdate() as any
+    const updateImage = update?.$set?.image || update?.image
+    
+    if (!updateImage) return
+    
     const docToUpdate = await this.model.findOne(this.getQuery())
-    if (updateImage && docToUpdate) {
-        unlink(
-            join(__dirname, `../public/${docToUpdate.image.fileName}`),
-            (err) => console.log(err)
-        )
-    }
+    if (!docToUpdate?.image?.fileName) return
+    
+    const safeFileName = path.basename(docToUpdate.image.fileName)
+    const fullPath = path.join(__dirname, '../public', safeFileName)
+    
+    fs.access(fullPath, fs.constants.F_OK, (err) => {
+        if (!err) {
+            fs.unlink(fullPath, (unlinkErr) => {
+                if (unlinkErr) console.error('Ошибка удаления:', unlinkErr)
+            })
+        }
+    })
 })
 
-// Можно лучше: удалять файл с изображением после удаление сущности
 cardsSchema.post('findOneAndDelete', async (doc: IProduct) => {
-    unlink(join(__dirname, `../public/${doc.image.fileName}`), (err) =>
-        console.log(err)
-    )
+    if (!doc?.image?.fileName) return
+    
+    const safeFileName = path.basename(doc.image.fileName)
+    const fullPath = path.join(__dirname, '../public', safeFileName)
+    
+    fs.access(fullPath, fs.constants.F_OK, (err) => {
+        if (!err) {
+            fs.unlink(fullPath, (unlinkErr) => {
+                if (unlinkErr) console.error('Ошибка удаления:', unlinkErr)
+            })
+        }
+    })
 })
 
 export default mongoose.model<IProduct>('product', cardsSchema)

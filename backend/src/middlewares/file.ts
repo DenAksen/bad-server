@@ -1,7 +1,9 @@
-import { Request, Express } from 'express'
-import multer, { FileFilterCallback } from 'multer'
-import { mkdirSync } from 'fs'
-import { join } from 'path'
+import { Request, Express, NextFunction, Response } from 'express';
+import multer, { FileFilterCallback } from 'multer';
+import { mkdirSync, promises as fs } from 'fs';
+import sharp from 'sharp';
+import path, { join } from 'path';
+import crypto from 'crypto';
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
@@ -20,7 +22,6 @@ const storage = multer.diskStorage({
         )
 
         mkdirSync(destinationPath, { recursive: true })
-
         cb(null, destinationPath)
     },
 
@@ -29,7 +30,9 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        cb(null, file.originalname)
+        const ext = path.extname(file.originalname)
+        const safeName = crypto.randomBytes(16).toString('hex') + ext
+        cb(null, safeName)
     },
 })
 
@@ -49,8 +52,34 @@ const fileFilter = (
     if (!types.includes(file.mimetype)) {
         return cb(null, false)
     }
-
     return cb(null, true)
 }
 
-export default multer({ storage, fileFilter })
+export const validateImageFile = async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.file) return next();
+    
+    const filePath = path.join(req.file.destination, req.file.filename);
+    
+    try {
+        const metadata = await sharp(filePath).metadata();
+        
+        if (!metadata.width || !metadata.height) {
+            await fs.unlink(filePath);
+            return res.status(400).json({ error: 'Invalid image file' });
+        }
+        
+        next();
+    } catch (error) {
+        await fs.unlink(filePath);
+        return res.status(400).json({ error: 'Invalid image file' });
+    }
+};
+
+export default multer({ 
+    storage, 
+    fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        files: 1,
+    }
+})

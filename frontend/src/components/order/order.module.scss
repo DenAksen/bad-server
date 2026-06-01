@@ -1,3 +1,5 @@
+@use '../../scss/mixins/index' as mixins;
+
 .order {
     @include mixins.flex(column);
     gap: 4rem;

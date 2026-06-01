@@ -4,7 +4,6 @@ import { defineConfig } from 'vite';
 import svgr from "vite-plugin-svgr";
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [ svgr(), react(), tsconfigPaths({root: __dirname})],
   resolve: {
@@ -20,8 +19,8 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `
-          @use "./src/scss/variables" as *;
-          @use "./src/scss/mixins";
+          @use "${resolve(__dirname, 'src/scss/variables.scss')}" as *;
+          @use "${resolve(__dirname, 'src/scss/mixins/index.scss')}";
         `,
       },
 
