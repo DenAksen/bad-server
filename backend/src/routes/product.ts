@@ -16,7 +16,7 @@ import { cacheControl, noCache } from '../middlewares/cache'
 
 const productRouter = Router()
 
-productRouter.get('/', cacheControl(100), getProducts)
+productRouter.get('/', cacheControl(5), getProducts)
 productRouter.post(
     '/',
     auth,
